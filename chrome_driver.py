@@ -1,4 +1,3 @@
-import subprocess
 import sys
 import os
 import time
@@ -7,20 +6,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 
-def install_packages():
-    packages = [
-        "selenium",
-        "webdriver-manager",
-        "pandas"
-    ]
-    
-    for package in packages:
-        try:
-            __import__(package)  # Try to import the package
-        except ImportError:
-            print(f"Installing {package}...")
-            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
 def setup_driver():
     """Sets up and returns a Chrome WebDriver instance with user profile support."""
     options = webdriver.ChromeOptions()
@@ -28,11 +13,8 @@ def setup_driver():
     chrome_user_data_path = get_chrome_user_data_dir()
     options.add_argument(f"--user-data-dir={chrome_user_data_path}")
     options.add_argument("--profile-directory=Default")  # Change if using a different profile
-
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    options.add_experimental_option("useAutomationExtension", False)
-    options.add_argument("start-maximized")
+    # options.add_argument("--headless")  # Run in headless mode for no GUI
+    # options.add_argument("--disable-gpu")  # Disable GPU acceleration
     
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
@@ -52,7 +34,6 @@ def get_chrome_user_data_dir():
 
 def main():
     """Main function to set up the environment and test WebDriver."""
-    install_packages()  # Install necessary packages
     driver = setup_driver()  # Set up the WebDriver
     
     try:
