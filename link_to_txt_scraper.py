@@ -1,28 +1,39 @@
-#python
-
-from chrome_driver import setup_driver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-import time
+from chrome_driver import setup_driver
 
 def scrape_light_novel(url):
     driver = setup_driver()
     
     try:
         driver.get(url)
-        time.sleep(2)  # Allow the page to load
         
-        # Extract title
-        title_element = driver.find_element(By.CLASS_NAME, "entry-title")
+        # Use WebDriverWait for loading the title element
+        title_element = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.CLASS_NAME, "entry-title"))
+        )
         title_text = title_element.text.replace("Kawaikereba Hentai demo Suki ni Natte Kuremasu ka?", "").strip()
         
         # Extract text paragraphs until stopping point
         paragraphs = driver.find_elements(By.TAG_NAME, "p")
         text_content = []
+        
         for para in paragraphs:
-            if "unable to move from that spot" in para.text:
-                text_content.append(para.text)
+            para_text = para.text
+            
+            # Skip unwanted content related to Discord, Facebook, Patreon, and specific links
+            if any(keyword in para_text for keyword in ["Discord", "Facebook", "Patreon", "CClaw Translations", "Editor:", "discord.gg", "patreon.com"]):
+                continue
+            
+            # Stop if the specific phrase is found
+            if ("<span id=\"wordads-inline-marker\" style=\"display: none;\"></span>" in para.get_attribute("outerHTML") or
+                "View all posts by" in para_text or
+                "Allgemein" in para_text):
                 break
-            text_content.append(para.text)
+            
+            # Collect the paragraph text
+            text_content.append(para_text)
         
         # Extract images
         images = driver.find_elements(By.CSS_SELECTOR, "figure.wp-block-image img")
@@ -51,10 +62,7 @@ def scrape_light_novel(url):
     finally:
         driver.quit()
 
-def main():
-    url = 'https://cclawtranslations.home.blog/2019/02/23/kawaikereba-hentai-demo-suki-ni-natte-kuremasu-ka-volume-1-chapter-1/'
-    result = scrape_light_novel(url)
-    print(result)
-
 if __name__ == "__main__":
-    main()
+    url = 'https://cclawtranslations.home.blog/2019/05/24/kawaikereba-hentai-demo-suki-ni-natte-kuremasu-ka-volume-4-chapte-4/'
+    text = scrape_light_novel(url)
+    print(text)

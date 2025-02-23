@@ -13,8 +13,8 @@ def setup_driver():
     chrome_user_data_path = get_chrome_user_data_dir()
     options.add_argument(f"--user-data-dir={chrome_user_data_path}")
     options.add_argument("--profile-directory=Default")  # Change if using a different profile
-    # options.add_argument("--headless")  # Run in headless mode for no GUI
-    # options.add_argument("--disable-gpu")  # Disable GPU acceleration
+    options.add_argument("--headless")  # Run in headless mode for no GUI
+    options.add_argument("--disable-gpu")  # Disable GPU acceleration
     
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)

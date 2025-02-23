@@ -56,13 +56,13 @@ def extract_links(url):
         # Extract specific links and update volume data
         extract_specific_links(driver, volume_data)
 
-        # Print the volume data dictionary
-        for volume, data in volume_data.items():
-            print('--------------------------------------------------------------')
-            print(f"{data['volume_name']} (Volume {volume}):")
-            for chapter, link in data['chapters'].items():
-                print(f"  {chapter}: {link}")
-            print('--------------------------------------------------------------')
+        # # Print the volume data dictionary
+        # for volume, data in volume_data.items():
+        #     print('--------------------------------------------------------------')
+        #     print(f"{data['volume_name']} (Volume {volume}):")
+        #     for chapter, link in data['chapters'].items():
+        #         print(f"  {chapter}: {link}")
+        #     print('--------------------------------------------------------------')
 
         return volume_data  # Return the volume data
 
@@ -72,3 +72,4 @@ def extract_links(url):
 if __name__ == "__main__":
     url = "https://cclawtranslations.home.blog/kawaikereba-hentai-demo-suki-ni-natte-kuremasu-ka-toc/"
     volume_data = extract_links(url)
+    print(volume_data)
