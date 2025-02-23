@@ -1,3 +1,4 @@
+import logging
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from link_scraper import extract_links
@@ -14,6 +15,9 @@ credentials = service_account.Credentials.from_service_account_file(
 docs_service = build('docs', 'v1', credentials=credentials)
 drive_service = build('drive', 'v3', credentials=credentials)
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+
 def create_google_doc(doc_title):
     """Creates a new Google Doc with the specified title."""
     if not isinstance(doc_title, str) or not doc_title.strip():
@@ -25,18 +29,26 @@ def create_google_doc(doc_title):
     return doc['documentId']
 
 def append_text_to_doc(doc_id, text):
-    """Appends text to a Google Doc."""
-    # Get the current document to find the end
-    document = docs_service.documents().get(documentId=doc_id).execute()
-    end_index = document.get('body').get('content')[-1].get('endIndex') - 1  # Get the end index
+    """Appends text to a Google Doc, starting on a new page."""
+    try:
+        document = docs_service.documents().get(documentId=doc_id).execute()
+        end_index = document.get('body').get('content')[-1].get('endIndex') - 1
 
-    requests = [{
-        'insertText': {
-            'location': {'index': end_index},
-            'text': text
-        }
-    }]
-    docs_service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+        # Insert a page break before the new text
+        requests = [{
+            'insertPageBreak': {
+                'location': {'index': end_index}  # Insert page break at the end of current content
+            }
+        }, {
+            'insertText': {
+                'location': {'index': end_index + 1},  # Adjust index to insert text after the page break
+                'text': text
+            }
+        }]
+        docs_service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+        logging.info(f"Appended text to document ID: {doc_id}")
+    except Exception as e:
+        logging.error(f"Error appending text to document ID {doc_id}: {e}")
 
 def share_document(document_id, email):
     """Shares the created document with the specified email address."""
@@ -56,20 +68,19 @@ def main():
     toc_url = "https://cclawtranslations.home.blog/kawaikereba-hentai-demo-suki-ni-natte-kuremasu-ka-toc/"
     email_to_share = "jebeboone@gmail.com"
     
-    # Extract links
-    volumes = extract_links(toc_url)
-    
-    for volume_number, volume_info in volumes.items():
-        doc_id = create_google_doc(f"Volume {volume_number}")  # Use "Volume {volume_number}" for the title
-        
-        # Loop through chapters and scrape text
-        for chapter_title, chapter_url in volume_info['chapters'].items():
-            print(chapter_url)  # Optional: Print the chapter URLs
-            chapter_text = scrape_light_novel(chapter_url)  # Get the text for the chapter
-            append_text_to_doc(doc_id, chapter_text)  # Append the text to the document
+    try:
+        volumes = extract_links(toc_url)
+        for volume_number, volume_info in volumes.items():
+            doc_id = create_google_doc(f"Volume {volume_number}")
 
-        # Share the document after all chapters are added
-        share_document(doc_id, email_to_share)
+            for chapter_title, chapter_url in volume_info['chapters'].items():
+                logging.info(f"Processing chapter: {chapter_title} from URL: {chapter_url}")
+                chapter_text = scrape_light_novel(chapter_url)
+                append_text_to_doc(doc_id, chapter_text)
+
+            share_document(doc_id, email_to_share)
+    except Exception as e:
+        logging.error(f"An error occurred in the main process: {e}")
 
 if __name__ == "__main__":
     main()
